@@ -65,6 +65,7 @@
             <p id="originalDimensions"></p>
             <p id="originalFileSize"></p>
         </div>
+        <div id="originalImageLoading" class="loading">Loading...</div>
         <div id="resizeButtons" class="hidden">
             <button class="btn" onclick="resizeImage(0.25)">25%</button>
             <button class="btn" onclick="resizeImage(0.5)">50%</button>
@@ -77,7 +78,7 @@
             <p id="resizedFileSize"></p>
             <button id="downloadButton" class="btn">Download Resized Image</button>
         </div>
-        <div id="loading" class="loading">Processing...</div>
+        <div id="resizeLoading" class="loading">Processing...</div>
     </div>
 
     <script type="module">
@@ -86,6 +87,7 @@
         const fileInput = document.getElementById('fileInput');
         const originalImage = document.getElementById('originalImage');
         const originalImageContainer = document.getElementById('originalImageContainer');
+        const originalImageLoading = document.getElementById('originalImageLoading');
         const originalDimensions = document.getElementById('originalDimensions');
         const originalFileSize = document.getElementById('originalFileSize');
         const resizeButtons = document.getElementById('resizeButtons');
@@ -94,10 +96,11 @@
         const resizedDimensions = document.getElementById('resizedDimensions');
         const resizedFileSize = document.getElementById('resizedFileSize');
         const downloadButton = document.getElementById('downloadButton');
-        const loading = document.getElementById('loading');
+        const resizeLoading = document.getElementById('resizeLoading');
         let originalFileName = '';
         let imageInfo = {};
         let originalFormat = '';
+        let originalImageDataUint8Array = null;
 
         async function initWasm() {
             await init();
@@ -106,49 +109,58 @@
         initWasm();
 
         fileInput.addEventListener('change', async (event) => {
+            originalImageLoading.style.display = 'block';
+            originalImageContainer.classList.add('hidden');
+            resizeButtons.classList.add('hidden');
+            resizedImageContainer.classList.add('hidden');
+            resizeLoading.style.display = 'none';
+
             const file = event.target.files[0];
             if (file) {
                 originalFileName = file.name;
                 const reader = new FileReader();
                 reader.onload = async (e) => {
-                    originalImage.src = e.target.result;
-                    originalImageContainer.classList.remove('hidden');
-                    resizeButtons.classList.remove('hidden');
+                    const originalImageData = e.target.result;
+                    const originalImageDataBinary = atob(originalImageData.split(',')[1]);
+
+                    originalImage.src = originalImageData;
                     originalFileSize.textContent = `File Size: ${(file.size / 1024).toFixed(2)} KB`;
 
-                    const response = await fetch(originalImage.src);
-                    const imageData = new Uint8Array(await response.arrayBuffer());
-                    imageInfo = get_image_info(imageData);
+                    originalImageDataUint8Array = Uint8Array.from(originalImageDataBinary.split(""), e => e.charCodeAt(0));
+                    imageInfo = get_image_info(originalImageDataUint8Array);
                     originalDimensions.textContent = `Width: ${imageInfo.width}px, Height: ${imageInfo.height}px`;
 
                     // Determine the original format
                     const formatMatch = file.type.match(/image\/(png|jpeg|jpg|gif)/);
                     originalFormat = formatMatch ? formatMatch[1] : 'png';
+
+                    originalImageLoading.style.display = 'none';
+                    originalImageContainer.classList.remove('hidden');
+                    resizeButtons.classList.remove('hidden');
                 };
                 reader.readAsDataURL(file);
             }
         });
 
         async function resizeImage(scale) {
-            loading.style.display = 'block';
-            resizedImageContainer.style.display = 'none';
+            resizeLoading.style.display = 'block';
+            resizedImageContainer.classList.add('hidden');
 
-            const response = await fetch(originalImage.src);
-            const imageData = new Uint8Array(await response.arrayBuffer());
-            const newWidth = imageInfo.width * scale;
-            const newHeight = imageInfo.height * scale;
-            const resizedData = resize_image(imageData, newWidth, newHeight, originalFormat);
-            const mimeType = `image/${originalFormat}`;
-            const blob = new Blob([resizedData], { type: mimeType });
-            const url = URL.createObjectURL(blob);
-            resizedImage.src = url;
-            resizedDimensions.textContent = `Width: ${newWidth}px, Height: ${newHeight}px`;
-            resizedImageContainer.classList.remove('hidden');
-            resizedFileSize.textContent = `File Size: ${(blob.size / 1024).toFixed(2)} KB`;
-            downloadButton.onclick = () => downloadResizedImage(url);
+            setTimeout(() => {
+                const newWidth = imageInfo.width * scale;
+                const newHeight = imageInfo.height * scale;
+                const resizedData = resize_image(originalImageDataUint8Array, newWidth, newHeight, originalFormat);
+                const mimeType = `image/${originalFormat}`;
+                const blob = new Blob([resizedData], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                resizedImage.src = url;
+                resizedDimensions.textContent = `Width: ${newWidth}px, Height: ${newHeight}px`;
+                resizedFileSize.textContent = `File Size: ${(blob.size / 1024).toFixed(2)} KB`;
+                downloadButton.onclick = () => downloadResizedImage(url);
 
-            loading.style.display = 'none';
-            resizedImageContainer.style.display = 'block';
+                resizeLoading.style.display = 'none';
+                resizedImageContainer.classList.remove('hidden');
+            })
         }
 
         window.resizeImage = resizeImage;

@@ -135,7 +135,7 @@
                         originalFileSize.textContent = `File Size: ${(file.size / 1024).toFixed(2)} KB`;
 
                         originalImageDataUint8Array = Uint8Array.from(originalImageDataBinary.split(""), e => e.charCodeAt(0));
-                        originalDimensions.textContent = `Width: ${originalImage.width}px, Height: ${originalImage.height}px`;
+                        originalDimensions.textContent = `Width: ${originalImage.naturalWidth}px, Height: ${originalImage.naturalHeight}px`;
 
                         // Determine the original format
                         const formatMatch = file.type.match(/image\/(png|jpeg|jpg|gif)/);
@@ -159,8 +159,8 @@
 
             const startTime = performance.now();
             setTimeout(() => {
-                const newWidth = originalImage.width * scale;
-                const newHeight = originalImage.height * scale;
+                const newWidth = originalImage.naturalWidth * scale;
+                const newHeight = originalImage.naturalHeight * scale;
                 const resizedData = resize_image(originalImageDataUint8Array, newWidth, newHeight, originalFormat);
                 const mimeType = `image/${originalFormat}`;
                 const blob = new Blob([resizedData], { type: mimeType });

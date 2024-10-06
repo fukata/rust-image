@@ -14,6 +14,7 @@ pub fn resize_image(image_data: &[u8], new_width: u32, new_height: u32, output_f
         Some(fmt) => match fmt.as_str() {
             "png" => ImageOutputFormat::Png,
             "jpeg" => ImageOutputFormat::Jpeg(80),
+            "jpg" => ImageOutputFormat::Jpeg(80),
             "gif" => ImageOutputFormat::Gif,
             _ => ImageOutputFormat::Png, // default to PNG if unknown format
         },

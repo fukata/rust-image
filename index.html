@@ -39,6 +39,12 @@
         .hidden {
             display: none;
         }
+        .loading {
+            display: none;
+            margin-top: 20px;
+            font-size: 18px;
+            color: #007bff;
+        }
     </style>
 </head>
 <body>
@@ -71,6 +77,7 @@
             <p id="resizedFileSize"></p>
             <button id="downloadButton" class="btn">Download Resized Image</button>
         </div>
+        <div id="loading" class="loading">Processing...</div>
     </div>
 
     <script type="module">
@@ -87,7 +94,10 @@
         const resizedDimensions = document.getElementById('resizedDimensions');
         const resizedFileSize = document.getElementById('resizedFileSize');
         const downloadButton = document.getElementById('downloadButton');
+        const loading = document.getElementById('loading');
         let originalFileName = '';
+        let imageInfo = {};
+        let originalFormat = '';
 
         async function initWasm() {
             await init();
@@ -108,34 +118,47 @@
 
                     const response = await fetch(originalImage.src);
                     const imageData = new Uint8Array(await response.arrayBuffer());
-                    const imageInfo = get_image_info(imageData);
+                    imageInfo = get_image_info(imageData);
                     originalDimensions.textContent = `Width: ${imageInfo.width}px, Height: ${imageInfo.height}px`;
+
+                    // Determine the original format
+                    const formatMatch = file.type.match(/image\/(png|jpeg|jpg|gif)/);
+                    originalFormat = formatMatch ? formatMatch[1] : 'png';
                 };
                 reader.readAsDataURL(file);
             }
         });
 
         async function resizeImage(scale) {
+            loading.style.display = 'block';
+            resizedImageContainer.style.display = 'none';
+
             const response = await fetch(originalImage.src);
             const imageData = new Uint8Array(await response.arrayBuffer());
-            const newWidth = originalImage.naturalWidth * scale;
-            const newHeight = originalImage.naturalHeight * scale;
-            const resizedData = resize_image(imageData, newWidth, newHeight, null);
-            const blob = new Blob([resizedData], { type: 'image/png' });
+            const newWidth = imageInfo.width * scale;
+            const newHeight = imageInfo.height * scale;
+            const resizedData = resize_image(imageData, newWidth, newHeight, originalFormat);
+            const mimeType = `image/${originalFormat}`;
+            const blob = new Blob([resizedData], { type: mimeType });
             const url = URL.createObjectURL(blob);
             resizedImage.src = url;
             resizedDimensions.textContent = `Width: ${newWidth}px, Height: ${newHeight}px`;
             resizedImageContainer.classList.remove('hidden');
             resizedFileSize.textContent = `File Size: ${(blob.size / 1024).toFixed(2)} KB`;
             downloadButton.onclick = () => downloadResizedImage(url);
+
+            loading.style.display = 'none';
+            resizedImageContainer.style.display = 'block';
         }
+
+        window.resizeImage = resizeImage;
 
         function downloadResizedImage(url) {
             const link = document.createElement('a');
             const fileNameParts = originalFileName.split('.');
             const extension = fileNameParts.pop();
             const baseName = fileNameParts.join('.');
-            link.download = `${baseName}_resized.${extension}`;
+            link.download = `${baseName}_resized.${originalFormat}`;
             link.href = url;
             link.click();
         }

@@ -6,13 +6,9 @@ edition = "2021"
 [dependencies]
 wasm-bindgen = "0.2.93"
 image = "0.23.14"
-wee_alloc = { version = "0.4.5", optional = true }
 
 [lib]
 crate-type = ["cdylib"]
-
-[features]
-default = ["wee_alloc"]
 
 [profile.release]
 opt-level = "s"

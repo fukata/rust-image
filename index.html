@@ -85,7 +85,7 @@
     </div>
 
     <script type="module">
-        import init, { resize_image, get_image_info } from './pkg/rust_image.js';
+        import init, { resize_image } from './pkg/rust_image.js';
 
         const fileInput = document.getElementById('fileInput');
         const originalImage = document.getElementById('originalImage');
@@ -104,7 +104,6 @@
         const shareButton = document.getElementById('shareButton');
         const resizeLoading = document.getElementById('resizeLoading');
         let originalFileName = '';
-        let imageInfo = {};
         let originalFormat = '';
         let originalImageDataUint8Array = null;
 
@@ -131,23 +130,24 @@
                     const originalImageDataBinary = atob(originalImageData.split(',')[1]);
 
                     originalImage.src = originalImageData;
-                    originalFileSize.textContent = `File Size: ${(file.size / 1024).toFixed(2)} KB`;
+                    originalImage.onload = () => {
+                        originalImageLoading.style.display = 'none';
+                        originalFileSize.textContent = `File Size: ${(file.size / 1024).toFixed(2)} KB`;
 
-                    originalImageDataUint8Array = Uint8Array.from(originalImageDataBinary.split(""), e => e.charCodeAt(0));
-                    imageInfo = get_image_info(originalImageDataUint8Array);
-                    originalDimensions.textContent = `Width: ${imageInfo.width}px, Height: ${imageInfo.height}px`;
+                        originalImageDataUint8Array = Uint8Array.from(originalImageDataBinary.split(""), e => e.charCodeAt(0));
+                        originalDimensions.textContent = `Width: ${originalImage.width}px, Height: ${originalImage.height}px`;
 
-                    // Determine the original format
-                    const formatMatch = file.type.match(/image\/(png|jpeg|jpg|gif)/);
-                    originalFormat = formatMatch ? formatMatch[1] : 'png';
+                        // Determine the original format
+                        const formatMatch = file.type.match(/image\/(png|jpeg|jpg|gif)/);
+                        originalFormat = formatMatch ? formatMatch[1] : 'png';
 
-                    const endTime = performance.now();
-                    originalFileProcessedTime.textContent = `Processed in ${(endTime - startTime).toFixed(2)} ms`;
+                        const endTime = performance.now();
+                        originalFileProcessedTime.textContent = `Processed in ${(endTime - startTime).toFixed(2)} ms`;
 
-                    originalImageLoading.style.display = 'none';
-                    originalImageContainer.classList.remove('hidden');
-                    resizeButtons.classList.remove('hidden');
-
+                        originalImageLoading.style.display = 'none';
+                        originalImageContainer.classList.remove('hidden');
+                        resizeButtons.classList.remove('hidden');
+                    }
                 };
                 reader.readAsDataURL(file);
             }
@@ -159,8 +159,8 @@
 
             const startTime = performance.now();
             setTimeout(() => {
-                const newWidth = imageInfo.width * scale;
-                const newHeight = imageInfo.height * scale;
+                const newWidth = originalImage.width * scale;
+                const newHeight = originalImage.height * scale;
                 const resizedData = resize_image(originalImageDataUint8Array, newWidth, newHeight, originalFormat);
                 const mimeType = `image/${originalFormat}`;
                 const blob = new Blob([resizedData], { type: mimeType });

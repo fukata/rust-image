@@ -64,6 +64,7 @@
             <img id="originalImage" src="" alt="Original Image">
             <p id="originalDimensions"></p>
             <p id="originalFileSize"></p>
+            <p id="originalFileProcessedTime"></p>
         </div>
         <div id="originalImageLoading" class="loading">Loading...</div>
         <div id="resizeButtons" class="hidden">
@@ -76,6 +77,7 @@
             <img id="resizedImage" src="" alt="Resized Image">
             <p id="resizedDimensions"></p>
             <p id="resizedFileSize"></p>
+            <p id="resizedFileProcessedTime"></p>
             <button id="downloadButton" class="btn">Download Resized Image</button>
             <button id="shareButton" class="btn">Share Resized Image</button>
         </div>
@@ -91,11 +93,13 @@
         const originalImageLoading = document.getElementById('originalImageLoading');
         const originalDimensions = document.getElementById('originalDimensions');
         const originalFileSize = document.getElementById('originalFileSize');
+        const originalFileProcessedTime = document.getElementById('originalFileProcessedTime');
         const resizeButtons = document.getElementById('resizeButtons');
         const resizedImageContainer = document.getElementById('resizedImageContainer');
         const resizedImage = document.getElementById('resizedImage');
         const resizedDimensions = document.getElementById('resizedDimensions');
         const resizedFileSize = document.getElementById('resizedFileSize');
+        const resizedFileProcessedTime = document.getElementById('resizedFileProcessedTime');
         const downloadButton = document.getElementById('downloadButton');
         const shareButton = document.getElementById('shareButton');
         const resizeLoading = document.getElementById('resizeLoading');
@@ -119,6 +123,7 @@
 
             const file = event.target.files[0];
             if (file) {
+                const startTime = performance.now();
                 originalFileName = file.name;
                 const reader = new FileReader();
                 reader.onload = async (e) => {
@@ -136,9 +141,13 @@
                     const formatMatch = file.type.match(/image\/(png|jpeg|jpg|gif)/);
                     originalFormat = formatMatch ? formatMatch[1] : 'png';
 
+                    const endTime = performance.now();
+                    originalFileProcessedTime.textContent = `Processed in ${(endTime - startTime).toFixed(2)} ms`;
+
                     originalImageLoading.style.display = 'none';
                     originalImageContainer.classList.remove('hidden');
                     resizeButtons.classList.remove('hidden');
+
                 };
                 reader.readAsDataURL(file);
             }
@@ -148,6 +157,7 @@
             resizeLoading.style.display = 'block';
             resizedImageContainer.classList.add('hidden');
 
+            const startTime = performance.now();
             setTimeout(() => {
                 const newWidth = imageInfo.width * scale;
                 const newHeight = imageInfo.height * scale;
@@ -161,9 +171,12 @@
                 downloadButton.onclick = () => downloadResizedImage(url);
                 shareButton.onclick = () => shareResizedImage(blob);
 
+                const endTime = performance.now();
+                resizedFileProcessedTime.textContent = `Processed in ${(endTime - startTime).toFixed(2)} ms`;
+
                 resizeLoading.style.display = 'none';
                 resizedImageContainer.classList.remove('hidden');
-            })
+            }, 1)
         }
 
         window.resizeImage = resizeImage;

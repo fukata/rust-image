@@ -73,7 +73,9 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import init, { resize_image, get_image_info } from './pkg/rust_image.js';
+
         const fileInput = document.getElementById('fileInput');
         const originalImage = document.getElementById('originalImage');
         const originalImageContainer = document.getElementById('originalImageContainer');
@@ -87,51 +89,54 @@
         const downloadButton = document.getElementById('downloadButton');
         let originalFileName = '';
 
-        fileInput.addEventListener('change', (event) => {
+        async function initWasm() {
+            await init();
+        }
+
+        initWasm();
+
+        fileInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (file) {
                 originalFileName = file.name;
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = async (e) => {
                     originalImage.src = e.target.result;
                     originalImageContainer.classList.remove('hidden');
                     resizeButtons.classList.remove('hidden');
                     originalFileSize.textContent = `File Size: ${(file.size / 1024).toFixed(2)} KB`;
+
+                    const response = await fetch(originalImage.src);
+                    const imageData = new Uint8Array(await response.arrayBuffer());
+                    const imageInfo = get_image_info(imageData);
+                    originalDimensions.textContent = `Width: ${imageInfo.width}px, Height: ${imageInfo.height}px`;
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        originalImage.onload = () => {
-            originalDimensions.textContent = `Width: ${originalImage.naturalWidth}px, Height: ${originalImage.naturalHeight}px`;
-        };
-
-        function resizeImage(scale) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.src = originalImage.src;
-            img.onload = () => {
-                const newWidth = img.width * scale;
-                const newHeight = img.height * scale;
-                canvas.width = newWidth;
-                canvas.height = newHeight;
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                resizedImage.src = canvas.toDataURL();
-                resizedDimensions.textContent = `Width: ${newWidth}px, Height: ${newHeight}px`;
-                resizedImageContainer.classList.remove('hidden');
-                resizedFileSize.textContent = `File Size: ${(canvas.toDataURL().length * 0.75 / 1024).toFixed(2)} KB`;
-                downloadButton.onclick = () => downloadResizedImage(canvas);
-            };
+        async function resizeImage(scale) {
+            const response = await fetch(originalImage.src);
+            const imageData = new Uint8Array(await response.arrayBuffer());
+            const newWidth = originalImage.naturalWidth * scale;
+            const newHeight = originalImage.naturalHeight * scale;
+            const resizedData = resize_image(imageData, newWidth, newHeight, null);
+            const blob = new Blob([resizedData], { type: 'image/png' });
+            const url = URL.createObjectURL(blob);
+            resizedImage.src = url;
+            resizedDimensions.textContent = `Width: ${newWidth}px, Height: ${newHeight}px`;
+            resizedImageContainer.classList.remove('hidden');
+            resizedFileSize.textContent = `File Size: ${(blob.size / 1024).toFixed(2)} KB`;
+            downloadButton.onclick = () => downloadResizedImage(url);
         }
 
-        function downloadResizedImage(canvas) {
+        function downloadResizedImage(url) {
             const link = document.createElement('a');
             const fileNameParts = originalFileName.split('.');
             const extension = fileNameParts.pop();
             const baseName = fileNameParts.join('.');
             link.download = `${baseName}_resized.${extension}`;
-            link.href = canvas.toDataURL();
+            link.href = url;
             link.click();
         }
     </script>

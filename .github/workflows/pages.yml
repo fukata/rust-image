@@ -48,6 +48,7 @@ jobs:
       run: |
         mkdir -p dist/pkg
         cp -r pkg/* dist/pkg
+        cp logo.png dist/logo.png
         cp index.html dist/index.html
 
     - name: Upload artifact

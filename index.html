@@ -255,7 +255,7 @@
             </div>
 
             <template x-if="isResizing">
-                <div class="loading">
+                <div class="loading" id="resizing-section">
                     <div>
                         <div class="loading-text">画像をリサイズしています...</div>
                         <div class="processing-details">
@@ -386,7 +386,7 @@
                     await new Promise(resolve => requestAnimationFrame(resolve));
 
                     // リサイズ開始時のスクロール
-                    document.getElementById('resized-section').scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById('resizing-section').scrollIntoView({ behavior: 'smooth' });
 
                     const startTime = performance.now();
                     const newWidth = Math.floor(this.originalImage.naturalWidth * scale);

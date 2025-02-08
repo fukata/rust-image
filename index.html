@@ -9,6 +9,34 @@
     <script type="module">
         import init from './pkg/rust_image.js';
         window.initWasm = init;
+        
+        // Service Workerの登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker登録成功:', registration.scope);
+                        
+                        // 更新チェック
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'activated') {
+                                    if (!navigator.serviceWorker.controller) {
+                                        return;
+                                    }
+                                    if (confirm('新しいバージョンが利用可能です。更新しますか？')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker登録失敗:', error);
+                    });
+            });
+        }
     </script>
     <style>
         body {
@@ -206,6 +234,18 @@
                 margin-bottom: 2rem;
             }
         }
+        .offline-notice {
+            background-color: #fef2f2;
+            color: #991b1b;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            display: none;
+        }
+        .offline-notice.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -213,6 +253,10 @@
         <div class="header">
             <img src="./logo.png" alt="Logo">
             <h1>Image Resizer</h1>
+        </div>
+
+        <div class="offline-notice" id="offlineNotice">
+            オフラインモードで動作中です
         </div>
 
         <div class="card">
@@ -287,6 +331,22 @@
     </div>
 
     <script>
+        // オフライン状態の監視を追加
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        function updateOnlineStatus() {
+            const notice = document.getElementById('offlineNotice');
+            if (!navigator.onLine) {
+                notice.classList.add('show');
+            } else {
+                notice.classList.remove('show');
+            }
+        }
+
+        // 初期状態のチェック
+        updateOnlineStatus();
+
         document.addEventListener('alpine:init', () => {
             Alpine.data('imageResizer', () => ({
                 dragOver: false,

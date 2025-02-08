@@ -4,210 +4,407 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="./logo.png" />
-
     <title>Image Resizer</title>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script type="module">
+        import init from './pkg/rust_image.js';
+        window.initWasm = init;
+    </script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            background-color: #f3f4f6;
+            min-height: 100vh;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: auto;
-            text-align: center;
+            padding: 2rem;
         }
-        img {
-            max-width: 100%;
-            height: auto;
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 2rem;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .header img {
+            width: 50px;
+            height: 50px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #1f2937;
         }
         .btn {
             margin: 5px;
-            padding: 10px 20px;
-            background-color: #007bff;
+            padding: 0.75rem 1.5rem;
+            background-color: #3b82f6;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 0.5rem;
             cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
         }
         .btn:hover {
-            background-color: #0056b3;
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            transform: translateY(0);
         }
         .file-field {
-            margin-bottom: 20px;
+            margin-bottom: 2rem;
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .file-field.dragover {
+            border-color: #3b82f6;
+            background-color: #f0f7ff;
+            cursor: copy;
+        }
+        .file-field:hover {
+            border-color: #3b82f6;
         }
         .file-path-wrapper {
-            margin-top: 10px;
+            margin-top: 1rem;
         }
-        .hidden {
-            display: none;
+        .file-path {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            text-align: center;
+        }
+        .image-container {
+            background: #f9fafb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.25rem;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+            color: #4b5563;
         }
         .loading {
-            display: none;
-            margin-top: 20px;
-            font-size: 18px;
-            color: #007bff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: #3b82f6;
+            font-weight: 500;
+            padding: 2rem;
+            background: #f0f7ff;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
         }
+        .loading::after {
+            content: "";
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #3b82f6;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .loading-text {
+            font-size: 1.1rem;
+        }
+        .processing-details {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>
-            <img src="./logo.png" alt="Logo" style="width: 50px; height: 50px; vertical-align: middle;">
-            Image Resizer
-        </h1>
-        <div class="file-field">
-            <label class="btn">
-                <span>File</span>
-                <input type="file" id="fileInput" accept="image/*" style="display: none;">
-            </label>
-            <div class="file-path-wrapper">
-                <input class="file-path" type="text" placeholder="Upload an image" readonly>
+    <div class="container" x-data="imageResizer">
+        <div class="header">
+            <img src="./logo.png" alt="Logo">
+            <h1>Image Resizer</h1>
+        </div>
+
+        <div class="card">
+            <div class="file-field" 
+                 @dragover.prevent="dragOver = true"
+                 @dragleave.prevent="dragOver = false"
+                 @drop.prevent="handleDrop($event)"
+                 :class="{ 'dragover': dragOver }">
+                <label class="btn">
+                    <span>選択 または ドラッグ＆ドロップ</span>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;" @change="handleFileSelect">
+                </label>
+                <div class="file-path-wrapper" x-show="fileName">
+                    <input class="file-path" type="text" x-model="fileName" readonly>
+                </div>
+            </div>
+
+            <template x-if="isOriginalLoading">
+                <div class="loading">画像を読み込み中...</div>
+            </template>
+
+            <div x-show="showOriginal" x-cloak id="original-section">
+                <h2>元の画像</h2>
+                <div class="image-container">
+                    <img id="originalImage" :src="originalImageUrl || ''" alt="Original Image">
+                    <div class="stats">
+                        <p><span x-text="originalDimensions || ''"></span></p>
+                        <p><span x-text="originalFileSize || ''"></span></p>
+                        <p><span x-text="originalProcessTime || ''"></span></p>
+                    </div>
+                </div>
+
+                <div class="resize-controls">
+                    <button class="btn" @click="resizeImage(0.25)">25%</button>
+                    <button class="btn" @click="resizeImage(0.5)">50%</button>
+                    <button class="btn" @click="resizeImage(0.75)">75%</button>
+                </div>
+            </div>
+
+            <template x-if="isResizing">
+                <div class="loading">
+                    <div>
+                        <div class="loading-text">画像をリサイズしています...</div>
+                        <div class="processing-details">
+                            <div>元のサイズ: <span x-text="originalDimensions"></span></div>
+                            <div>処理中のファイル: <span x-text="fileName"></span></div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <div x-show="showResized" x-cloak id="resized-section">
+                <h2>リサイズされた画像</h2>
+                <div class="image-container">
+                    <div>
+                        <img id="resizedImage" :src="resizedImageUrl || ''" alt="Resized Image">
+                        <div class="stats">
+                            <p><span x-text="resizedDimensions || ''"></span></p>
+                            <p><span x-text="resizedFileSize || ''"></span></p>
+                            <p><span x-text="resizedProcessTime || ''"></span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="actions" x-show="showResized">
+                    <button class="btn" @click="downloadResizedImage">ダウンロード</button>
+                    <button class="btn" @click="shareResizedImage">共有</button>
+                </div>
             </div>
         </div>
-        <div id="originalImageContainer" class="hidden">
-            <h2>Original Image</h2>
-            <img id="originalImage" src="" alt="Original Image">
-            <p id="originalDimensions"></p>
-            <p id="originalFileSize"></p>
-            <p id="originalFileProcessedTime"></p>
-        </div>
-        <div id="originalImageLoading" class="loading">Loading...</div>
-        <div id="resizeButtons" class="hidden">
-            <button class="btn" onclick="resizeImage(0.25)">25%</button>
-            <button class="btn" onclick="resizeImage(0.5)">50%</button>
-            <button class="btn" onclick="resizeImage(0.75)">75%</button>
-        </div>
-        <div id="resizedImageContainer" class="hidden">
-            <h2>Resized Image</h2>
-            <img id="resizedImage" src="" alt="Resized Image">
-            <p id="resizedDimensions"></p>
-            <p id="resizedFileSize"></p>
-            <p id="resizedFileProcessedTime"></p>
-            <button id="downloadButton" class="btn">Download Resized Image</button>
-            <button id="shareButton" class="btn">Share Resized Image</button>
-        </div>
-        <div id="resizeLoading" class="loading">Processing...</div>
     </div>
 
-    <script type="module">
-        import init, { resize_image } from './pkg/rust_image.js';
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('imageResizer', () => ({
+                dragOver: false,
+                fileName: '',
+                originalImageUrl: null,
+                resizedImageUrl: null,
+                originalDimensions: '',
+                originalFileSize: '',
+                originalProcessTime: '',
+                resizedDimensions: '',
+                resizedFileSize: '',
+                resizedProcessTime: '',
+                isOriginalLoading: false,
+                isResizing: false,
+                showOriginal: false,
+                showResized: false,
+                originalImageData: null,
+                originalFormat: '',
+                originalImage: null,
+                resizedBlob: null,
+                resize_image: null,
 
-        const fileInput = document.getElementById('fileInput');
-        const originalImage = document.getElementById('originalImage');
-        const originalImageContainer = document.getElementById('originalImageContainer');
-        const originalImageLoading = document.getElementById('originalImageLoading');
-        const originalDimensions = document.getElementById('originalDimensions');
-        const originalFileSize = document.getElementById('originalFileSize');
-        const originalFileProcessedTime = document.getElementById('originalFileProcessedTime');
-        const resizeButtons = document.getElementById('resizeButtons');
-        const resizedImageContainer = document.getElementById('resizedImageContainer');
-        const resizedImage = document.getElementById('resizedImage');
-        const resizedDimensions = document.getElementById('resizedDimensions');
-        const resizedFileSize = document.getElementById('resizedFileSize');
-        const resizedFileProcessedTime = document.getElementById('resizedFileProcessedTime');
-        const downloadButton = document.getElementById('downloadButton');
-        const shareButton = document.getElementById('shareButton');
-        const resizeLoading = document.getElementById('resizeLoading');
-        let originalFileName = '';
-        let originalFormat = '';
-        let originalImageDataUint8Array = null;
+                async init() {
+                    const wasm = await import('./pkg/rust_image.js');
+                    await wasm.default();
+                    this.resize_image = wasm.resize_image;
+                    this.originalImage = document.getElementById('originalImage');
+                },
 
-        async function initWasm() {
-            await init();
-        }
-
-        initWasm();
-
-        fileInput.addEventListener('change', async (event) => {
-            originalImageLoading.style.display = 'block';
-            originalImageContainer.classList.add('hidden');
-            resizeButtons.classList.add('hidden');
-            resizedImageContainer.classList.add('hidden');
-            resizeLoading.style.display = 'none';
-
-            const file = event.target.files[0];
-            if (file) {
-                const startTime = performance.now();
-                originalFileName = file.name;
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    const originalImageData = e.target.result;
-                    const originalImageDataBinary = atob(originalImageData.split(',')[1]);
-
-                    originalImage.src = originalImageData;
-                    originalImage.onload = () => {
-                        originalImageLoading.style.display = 'none';
-                        originalFileSize.textContent = `File Size: ${(file.size / 1024).toFixed(2)} KB`;
-
-                        originalImageDataUint8Array = Uint8Array.from(originalImageDataBinary.split(""), e => e.charCodeAt(0));
-                        originalDimensions.textContent = `Width: ${originalImage.naturalWidth}px, Height: ${originalImage.naturalHeight}px`;
-
-                        // Determine the original format
-                        const formatMatch = file.type.match(/image\/(png|jpeg|jpg|gif)/);
-                        originalFormat = formatMatch ? formatMatch[1] : 'png';
-
-                        const endTime = performance.now();
-                        originalFileProcessedTime.textContent = `Processed in ${(endTime - startTime).toFixed(2)} ms`;
-
-                        originalImageLoading.style.display = 'none';
-                        originalImageContainer.classList.remove('hidden');
-                        resizeButtons.classList.remove('hidden');
+                handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.processFile(file);
                     }
-                };
-                reader.readAsDataURL(file);
-            }
+                },
+
+                handleDrop(event) {
+                    this.dragOver = false;
+                    const file = event.dataTransfer.files[0];
+                    if (file && file.type.startsWith('image/')) {
+                        this.processFile(file);
+                    }
+                },
+
+                processFile(file) {
+                    this.isOriginalLoading = true;
+                    this.showOriginal = false;
+                    this.showResized = false;
+
+                    const startTime = performance.now();
+                    this.fileName = file.name;
+                    const reader = new FileReader();
+                    
+                    reader.onload = (e) => {
+                        const originalImageData = e.target.result;
+                        const originalImageDataBinary = atob(originalImageData.split(',')[1]);
+
+                        this.originalImageUrl = originalImageData;
+                        this.originalImage.onload = async () => {
+                            this.originalImageData = Uint8Array.from(originalImageDataBinary.split(""), e => e.charCodeAt(0));
+                            
+                            this.originalDimensions = `Width: ${this.originalImage.naturalWidth}px, Height: ${this.originalImage.naturalHeight}px`;
+                            this.originalFileSize = `File Size: ${(file.size / 1024).toFixed(2)} KB`;
+
+                            const endTime = performance.now();
+                            this.originalProcessTime = `Processed in ${(endTime - startTime).toFixed(2)} ms`;
+
+                            this.isOriginalLoading = false;
+                            this.showOriginal = true;
+
+                            // DOMの更新を待ってスクロール
+                            await new Promise(resolve => setTimeout(resolve, 0));
+                            await new Promise(resolve => requestAnimationFrame(resolve));
+                            
+                            const originalSection = document.getElementById('original-section');
+                            if (originalSection) {
+                                originalSection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                        };
+
+                        const formatMatch = file.type.match(/image\/(png|jpeg|jpg|gif)/);
+                        this.originalFormat = formatMatch ? formatMatch[1] : 'png';
+                    };
+                    reader.readAsDataURL(file);
+                },
+
+                async resizeImage(scale) {
+                    if (!this.resize_image) return;
+                    
+                    this.isResizing = true;
+                    this.showResized = false;
+                    this.resizedDimensions = '';
+                    this.resizedFileSize = '';
+                    this.resizedProcessTime = '';
+
+                    // 状態の更新が画面に反映されるのを待つ
+                    await new Promise(resolve => requestAnimationFrame(resolve));
+
+                    // リサイズ開始時のスクロール
+                    document.getElementById('resized-section').scrollIntoView({ behavior: 'smooth' });
+
+                    const startTime = performance.now();
+                    const newWidth = Math.floor(this.originalImage.naturalWidth * scale);
+                    const newHeight = Math.floor(this.originalImage.naturalHeight * scale);
+                    
+                    try {
+                        const resizedData = await new Promise((resolve, reject) => {
+                            try {
+                                setTimeout(() => {
+                                    const result = this.resize_image(
+                                        this.originalImageData,
+                                        newWidth,
+                                        newHeight,
+                                        this.originalFormat
+                                    );
+                                    resolve(result);
+                                }, 0);
+                            } catch (error) {
+                                reject(error);
+                            }
+                        });
+                        
+                        const mimeType = `image/${this.originalFormat}`;
+                        const blob = new Blob([resizedData], { type: mimeType });
+                        this.resizedBlob = blob;
+                        const url = URL.createObjectURL(blob);
+                        
+                        this.resizedImageUrl = url;
+                        this.resizedDimensions = `Width: ${newWidth}px, Height: ${newHeight}px`;
+                        this.resizedFileSize = `File Size: ${(blob.size / 1024).toFixed(2)} KB`;
+                        this.resizedProcessTime = `Processed in ${(performance.now() - startTime).toFixed(2)} ms`;
+
+                        this.isResizing = false;
+                        this.showResized = true;
+
+                        // DOMの更新を確実に待つ
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                        await new Promise(resolve => requestAnimationFrame(resolve));
+                        
+                        // スクロール実行
+                        const resizedSection = document.getElementById('resized-section');
+                        if (resizedSection) {
+                            resizedSection.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    } catch (error) {
+                        console.error('リサイズ中にエラーが発生しました:', error);
+                        this.isResizing = false;
+                        alert('画像のリサイズ中にエラーが発生しました。');
+                    }
+                },
+
+                downloadResizedImage() {
+                    const link = document.createElement('a');
+                    const fileNameParts = this.fileName.split('.');
+                    const extension = fileNameParts.pop();
+                    const baseName = fileNameParts.join('.');
+                    link.download = `${baseName}_resized.${this.originalFormat}`;
+                    link.href = this.resizedImageUrl;
+                    link.click();
+                },
+
+                shareResizedImage() {
+                    if (navigator.share) {
+                        fetch(this.resizedImageUrl)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                const file = new File([blob], `${this.fileName.split('.')[0]}_resized.${this.originalFormat}`, 
+                                    { type: `image/${this.originalFormat}` });
+                                
+                                navigator.share({
+                                    files: [file],
+                                    title: 'Resized Image',
+                                    text: 'Check out this resized image!'
+                                }).catch(error => console.error('Error sharing:', error));
+                            })
+                            .catch(error => {
+                                console.error('Error creating file for sharing:', error);
+                                alert('共有の準備中にエラーが発生しました。');
+                            });
+                    } else {
+                        alert('お使いのブラウザは共有機能に対応していません。');
+                    }
+                }
+            }))
         });
-
-        async function resizeImage(scale) {
-            resizeLoading.style.display = 'block';
-            resizedImageContainer.classList.add('hidden');
-
-            const startTime = performance.now();
-            setTimeout(() => {
-                const newWidth = originalImage.naturalWidth * scale;
-                const newHeight = originalImage.naturalHeight * scale;
-                const resizedData = resize_image(originalImageDataUint8Array, newWidth, newHeight, originalFormat);
-                const mimeType = `image/${originalFormat}`;
-                const blob = new Blob([resizedData], { type: mimeType });
-                const url = URL.createObjectURL(blob);
-                resizedImage.src = url;
-                resizedDimensions.textContent = `Width: ${newWidth}px, Height: ${newHeight}px`;
-                resizedFileSize.textContent = `File Size: ${(blob.size / 1024).toFixed(2)} KB`;
-                downloadButton.onclick = () => downloadResizedImage(url);
-                shareButton.onclick = () => shareResizedImage(blob);
-
-                const endTime = performance.now();
-                resizedFileProcessedTime.textContent = `Processed in ${(endTime - startTime).toFixed(2)} ms`;
-
-                resizeLoading.style.display = 'none';
-                resizedImageContainer.classList.remove('hidden');
-            }, 1)
-        }
-
-        window.resizeImage = resizeImage;
-
-        function downloadResizedImage(url) {
-            const link = document.createElement('a');
-            const fileNameParts = originalFileName.split('.');
-            const extension = fileNameParts.pop();
-            const baseName = fileNameParts.join('.');
-            link.download = `${baseName}_resized.${originalFormat}`;
-            link.href = url;
-            link.click();
-        }
-
-        function shareResizedImage(blob) {
-            if (navigator.share) {
-                const file = new File([blob], `${originalFileName.split('.')[0]}_resized.${originalFormat}`, { type: blob.type });
-                navigator.share({
-                    files: [file],
-                    title: 'Resized Image',
-                    text: 'Check out this resized image!'
-                }).catch(error => console.error('Error sharing:', error));
-            } else {
-                alert('Web Share API is not supported in your browser.');
-            }
-        }
     </script>
 </body>
 </html>

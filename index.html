@@ -44,18 +44,27 @@
             margin: 0;
             background-color: #f3f4f6;
             min-height: 100vh;
+            overflow: hidden;
         }
         .container {
             max-width: 800px;
             margin: auto;
             padding: 1rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
         }
         .card {
             background: white;
             border-radius: 1rem;
             padding: 1rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            margin-bottom: 1rem;
+            margin-bottom: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
         }
         .header {
             display: flex;
@@ -108,6 +117,8 @@
             gap: 1rem;
             align-items: center;
             min-width: 0;
+            flex: 1;
+            justify-content: center;
         }
         .file-field-button {
             margin-bottom: 0.5rem;
@@ -264,12 +275,11 @@
                  @dragover.prevent="dragOver = true"
                  @dragleave.prevent="dragOver = false"
                  @drop.prevent="handleDrop($event)"
+                 @click="document.getElementById('fileInput').click()"
                  :class="{ 'dragover': dragOver }">
+                <input type="file" id="fileInput" accept="image/*" style="display: none;" @change="handleFileSelect">
                 <div class="file-field-button">
-                    <label class="btn">
-                        <span>選択 または ドラッグ＆ドロップ</span>
-                        <input type="file" id="fileInput" accept="image/*" style="display: none;" @change="handleFileSelect">
-                    </label>
+                    <span class="btn">選択 または ドラッグ＆ドロップ</span>
                 </div>
                 <div class="file-path-wrapper" x-show="fileName" x-cloak>
                     <input class="file-path" type="text" x-model="fileName" readonly>

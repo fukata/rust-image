@@ -104,6 +104,12 @@
         .btn:active {
             transform: translateY(0);
         }
+        .btn-danger {
+            background-color: #ef4444;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
         .file-field {
             margin-bottom: 1rem;
             border: 2px dashed #d1d5db;
@@ -344,7 +350,7 @@
 
             <div x-show="showHistory" x-cloak id="history-section">
                 <h2>履歴</h2>
-                <button class="btn" @click="clearHistory">履歴をクリア</button>
+                <button class="btn btn-danger" @click="clearHistory">履歴をクリア</button>
                 <template x-for="(item, index) in history" :key="index">
                     <div class="image-container">
                         <img :src="item.dataUrl" alt="History Image">
@@ -619,9 +625,11 @@
                 },
 
                 clearHistory() {
-                    this.history = [];
-                    localStorage.removeItem('resizeHistory');
-                    this.showHistory = false;
+                    if (confirm('履歴をクリアしますか？')) {
+                        this.history = [];
+                        localStorage.removeItem('resizeHistory');
+                        this.showHistory = false;
+                    }
                 }
             }))
         });

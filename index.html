@@ -10,13 +10,14 @@
         import init from './pkg/rust_image.js';
         window.initWasm = init;
         
-        // Service Workerの登録
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
+        // 初期表示時にトップにスクロールし、Service Workerを登録
+        window.addEventListener('load', () => {
+            window.scrollTo(0, 0);
+            if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('./sw.js')
                     .then(registration => {
                         console.log('ServiceWorker登録成功:', registration.scope);
-                        
+
                         // 更新チェック
                         registration.addEventListener('updatefound', () => {
                             const newWorker = registration.installing;
@@ -35,8 +36,8 @@
                     .catch(error => {
                         console.log('ServiceWorker登録失敗:', error);
                     });
-            });
-        }
+            }
+        });
     </script>
     <style>
         body {
@@ -44,7 +45,7 @@
             margin: 0;
             background-color: #f3f4f6;
             min-height: 100vh;
-            overflow: hidden;
+            overflow-y: auto;
         }
         .container {
             max-width: 800px;
@@ -443,7 +444,7 @@
                 isResizing: false,
                 showOriginal: false,
                 showResized: false,
-                showHistory: false,
+                showHistory: true,
                 originalImageData: null,
                 originalFormat: '',
                 originalImage: null,

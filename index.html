@@ -13,7 +13,7 @@
         // Service Workerの登録
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
                     .then(registration => {
                         console.log('ServiceWorker登録成功:', registration.scope);
                         
@@ -334,7 +334,7 @@
                 </div>
                 <div class="actions" x-show="showResized">
                     <button class="btn" @click="downloadResizedImage">ダウンロード</button>
-                    <button class="btn" @click="shareResizedImage">共有</button>
+                    <button class="btn" id="shareButton" @click="shareResizedImage">共有</button>
                 </div>
             </div>
         </div>
@@ -347,10 +347,17 @@
 
         function updateOnlineStatus() {
             const notice = document.getElementById('offlineNotice');
+            const shareBtn = document.getElementById('shareButton');
             if (!navigator.onLine) {
                 notice.classList.add('show');
+                if (shareBtn) {
+                    shareBtn.setAttribute('disabled', 'disabled');
+                }
             } else {
                 notice.classList.remove('show');
+                if (shareBtn) {
+                    shareBtn.removeAttribute('disabled');
+                }
             }
         }
 

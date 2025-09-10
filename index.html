@@ -50,8 +50,8 @@
         .container {
             max-width: 800px;
             margin: auto;
-            padding: 1rem;
-            height: 100vh;
+            padding: 1rem 1rem 5rem 1rem; /* Add bottom padding for tab bar */
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
@@ -66,6 +66,57 @@
             display: flex;
             flex-direction: column;
             overflow: auto;
+        }
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -2px 10px -2px rgb(0 0 0 / 0.1);
+            z-index: 1000;
+        }
+        .tab-container {
+            display: flex;
+            max-width: 800px;
+            width: 100%;
+        }
+        .tab {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #6b7280;
+            font-weight: 500;
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .tab.active {
+            color: #3b82f6;
+            background-color: #f0f7ff;
+        }
+        .tab:hover {
+            color: #3b82f6;
+            background-color: #f9fafb;
+        }
+        .tab-icon {
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
         }
         .header {
             display: flex;
@@ -270,7 +321,7 @@
         }
         @media (min-width: 768px) {
             .container {
-                padding: 2rem;
+                padding: 2rem 2rem 5rem 2rem;
             }
             .card {
                 padding: 2rem;
@@ -288,6 +339,13 @@
             .file-field {
                 padding: 2.5rem 2rem;
                 gap: 1.5rem;
+            }
+            .tab {
+                padding: 1rem 1.5rem;
+                font-size: 1rem;
+            }
+            .tab-icon {
+                font-size: 1.5rem;
             }
         }
         @media (min-width: 768px) {
@@ -322,92 +380,98 @@
         </div>
 
         <div class="card">
-            <div class="file-field" 
-                 @dragover.prevent="dragOver = true"
-                 @dragleave.prevent="dragOver = false"
-                 @drop.prevent="handleDrop($event)"
-                 @click="document.getElementById('fileInput').click()"
-                 :class="{ 'dragover': dragOver }">
-                <input type="file" id="fileInput" accept="image/*" style="display: none;" @change="handleFileSelect">
-                <div class="file-field-button">
-                    <span class="btn">選択 または ドラッグ＆ドロップ</span>
-                </div>
-                <div class="file-path-wrapper" x-show="fileName" x-cloak>
-                    <input class="file-path" type="text" x-model="fileName" readonly>
-                </div>
-            </div>
-
-            <template x-if="isOriginalLoading">
-                <div class="loading">画像を読み込み中...</div>
-            </template>
-
-            <div x-show="showOriginal" x-cloak id="original-section">
-                <h2>元の画像</h2>
-                <div class="image-container">
-                    <img id="originalImage" :src="originalImageUrl || ''" alt="Original Image">
-                    <div class="stats">
-                        <p><span x-text="originalDimensions || ''"></span></p>
-                        <p><span x-text="originalFileSize || ''"></span></p>
-                        <p><span x-text="originalProcessTime || ''"></span></p>
+            <!-- Home Tab Content -->
+            <div class="tab-content" :class="{ 'active': activeTab === 'home' }">
+                <div class="file-field" 
+                     @dragover.prevent="dragOver = true"
+                     @dragleave.prevent="dragOver = false"
+                     @drop.prevent="handleDrop($event)"
+                     @click="document.getElementById('fileInput').click()"
+                     :class="{ 'dragover': dragOver }">
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;" @change="handleFileSelect">
+                    <div class="file-field-button">
+                        <span class="btn">選択 または ドラッグ＆ドロップ</span>
+                    </div>
+                    <div class="file-path-wrapper" x-show="fileName" x-cloak>
+                        <input class="file-path" type="text" x-model="fileName" readonly>
                     </div>
                 </div>
 
-                <div class="resize-controls">
-                    <button class="btn" @click="resizeImage(0.25)">25%</button>
-                    <button class="btn" @click="resizeImage(0.5)">50%</button>
-                    <button class="btn" @click="resizeImage(0.75)">75%</button>
-                </div>
-            </div>
+                <template x-if="isOriginalLoading">
+                    <div class="loading">画像を読み込み中...</div>
+                </template>
 
-            <template x-if="isResizing">
-                <div class="loading" id="resizing-section">
-                    <div>
-                        <div class="loading-text">画像をリサイズしています...</div>
-                        <div class="processing-details">
-                            <div>元のサイズ: <span x-text="originalDimensions"></span></div>
-                            <div>処理中のファイル: <span x-text="fileName"></span></div>
-                        </div>
-                    </div>
-                </div>
-            </template>
-
-            <div x-show="showResized" x-cloak id="resized-section">
-                <h2>リサイズされた画像</h2>
-                <div class="image-container">
-                    <div>
-                        <img id="resizedImage" :src="resizedImageUrl || ''" alt="Resized Image">
+                <div x-show="showOriginal" x-cloak id="original-section">
+                    <h2>元の画像</h2>
+                    <div class="image-container">
+                        <img id="originalImage" :src="originalImageUrl || ''" alt="Original Image">
                         <div class="stats">
-                            <p><span x-text="resizedDimensions || ''"></span></p>
-                            <p><span x-text="resizedFileSize || ''"></span></p>
-                            <p><span x-text="resizedProcessTime || ''"></span></p>
+                            <p><span x-text="originalDimensions || ''"></span></p>
+                            <p><span x-text="originalFileSize || ''"></span></p>
+                            <p><span x-text="originalProcessTime || ''"></span></p>
                         </div>
                     </div>
+
+                    <div class="resize-controls">
+                        <button class="btn" @click="resizeImage(0.25)">25%</button>
+                        <button class="btn" @click="resizeImage(0.5)">50%</button>
+                        <button class="btn" @click="resizeImage(0.75)">75%</button>
+                    </div>
                 </div>
-                <div class="actions" x-show="showResized">
-                    <button class="btn" @click="downloadResizedImage">ダウンロード</button>
-                    <button class="btn" @click="shareResizedImage">共有</button>
+
+                <template x-if="isResizing">
+                    <div class="loading" id="resizing-section">
+                        <div>
+                            <div class="loading-text">画像をリサイズしています...</div>
+                            <div class="processing-details">
+                                <div>元のサイズ: <span x-text="originalDimensions"></span></div>
+                                <div>処理中のファイル: <span x-text="fileName"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <div x-show="showResized" x-cloak id="resized-section">
+                    <h2>リサイズされた画像</h2>
+                    <div class="image-container">
+                        <div>
+                            <img id="resizedImage" :src="resizedImageUrl || ''" alt="Resized Image">
+                            <div class="stats">
+                                <p><span x-text="resizedDimensions || ''"></span></p>
+                                <p><span x-text="resizedFileSize || ''"></span></p>
+                                <p><span x-text="resizedProcessTime || ''"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="actions" x-show="showResized">
+                        <button class="btn" @click="downloadResizedImage">ダウンロード</button>
+                        <button class="btn" @click="shareResizedImage">共有</button>
+                    </div>
                 </div>
             </div>
 
-            <div x-show="history.length && !showHistory">
-                <button class="btn" @click="showHistory = true">履歴を表示</button>
-            </div>
-
-            <div x-show="showHistory" x-cloak id="history-section">
+            <!-- History Tab Content -->
+            <div class="tab-content" :class="{ 'active': activeTab === 'history' }">
                 <div class="history-header">
                     <h2>履歴</h2>
-                    <button class="btn btn-danger" @click="clearHistory">履歴をクリア</button>
+                    <button class="btn btn-danger" @click="clearHistory" x-show="history.length">履歴をクリア</button>
                 </div>
-                <div class="thumbnail-grid">
+                
+                <div x-show="!history.length" class="loading" style="background: #f9fafb; color: #6b7280;">
+                    まだ履歴がありません
+                </div>
+                
+                <div x-show="history.length" class="thumbnail-grid">
                     <template x-for="(item, index) in history" :key="index">
                         <img class="thumbnail" :src="item.dataUrl" alt="History Image" @click="openHistoryImage(index)">
                     </template>
                 </div>
             </div>
 
+            <!-- History Modal -->
             <div x-show="selectedHistoryIndex !== null" x-cloak class="modal" @click.self="closeHistoryImage">
                 <div class="modal-content">
-                    <img :src="history[selectedHistoryIndex].dataUrl" alt="History Image">
+                    <img :src="selectedHistoryIndex !== null ? history[selectedHistoryIndex]?.dataUrl : ''" alt="History Image">
                     <div class="actions">
                         <button class="btn" @click="downloadHistoryImage(selectedHistoryIndex)">ダウンロード</button>
                         <button class="btn" @click="shareHistoryImage(selectedHistoryIndex)">共有</button>
@@ -415,6 +479,20 @@
                         <button class="btn" @click="closeHistoryImage">閉じる</button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Bottom Tab Bar -->
+        <div class="tab-bar">
+            <div class="tab-container">
+                <button class="tab" :class="{ 'active': activeTab === 'home' }" @click="activeTab = 'home'">
+                    <div class="tab-icon">🏠</div>
+                    <div>ホーム</div>
+                </button>
+                <button class="tab" :class="{ 'active': activeTab === 'history' }" @click="activeTab = 'history'">
+                    <div class="tab-icon">📂</div>
+                    <div>履歴</div>
+                </button>
             </div>
         </div>
     </div>
@@ -438,6 +516,7 @@
 
         document.addEventListener('alpine:init', () => {
             Alpine.data('imageResizer', () => ({
+                activeTab: 'home',
                 dragOver: false,
                 fileName: '',
                 originalImageUrl: null,
@@ -452,7 +531,6 @@
                 isResizing: false,
                 showOriginal: false,
                 showResized: false,
-                showHistory: true,
                 originalImageData: null,
                 originalFormat: '',
                 originalImage: null,
@@ -693,9 +771,6 @@
                         this.history.splice(index, 1);
                         localStorage.setItem('resizeHistory', JSON.stringify(this.history));
                         this.closeHistoryImage();
-                        if (!this.history.length) {
-                            this.showHistory = false;
-                        }
                     }
                 },
 
@@ -703,7 +778,6 @@
                     if (confirm('履歴を全て削除しますか？')) {
                         this.history = [];
                         localStorage.removeItem('resizeHistory');
-                        this.showHistory = false;
                         this.selectedHistoryIndex = null;
                     }
                 }

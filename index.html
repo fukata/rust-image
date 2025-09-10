@@ -337,6 +337,19 @@
                     <button class="btn" @click="shareResizedImage">共有</button>
                 </div>
             </div>
+
+            <div x-show="history.length" x-cloak id="history-section">
+                <h2>履歴</h2>
+                <template x-for="(item, index) in history" :key="index">
+                    <div class="image-container">
+                        <img :src="item.dataUrl" alt="History Image">
+                        <div class="actions">
+                            <button class="btn" @click="downloadHistoryImage(index)">ダウンロード</button>
+                            <button class="btn" @click="shareHistoryImage(index)">共有</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 
@@ -378,12 +391,17 @@
                 originalImage: null,
                 resizedBlob: null,
                 resize_image: null,
+                history: [],
 
                 async init() {
                     const wasm = await import('./pkg/rust_image.js');
                     await wasm.default();
                     this.resize_image = wasm.resize_image;
                     this.originalImage = document.getElementById('originalImage');
+                    const stored = localStorage.getItem('resizeHistory');
+                    if (stored) {
+                        this.history = JSON.parse(stored);
+                    }
                 },
 
                 handleFileSelect(event) {
@@ -492,6 +510,8 @@
                         this.isResizing = false;
                         this.showResized = true;
 
+                        this.addToHistory(blob);
+
                         // DOMの更新を確実に待つ
                         await new Promise(resolve => setTimeout(resolve, 0));
                         await new Promise(resolve => requestAnimationFrame(resolve));
@@ -526,6 +546,57 @@
                                 const file = new File([blob], `${this.fileName.split('.')[0]}_resized.${this.originalFormat}`, 
                                     { type: `image/${this.originalFormat}` });
                                 
+                                navigator.share({
+                                    files: [file],
+                                    title: 'Resized Image',
+                                    text: 'Check out this resized image!'
+                                }).catch(error => console.error('Error sharing:', error));
+                            })
+                            .catch(error => {
+                                console.error('Error creating file for sharing:', error);
+                                alert('共有の準備中にエラーが発生しました。');
+                            });
+                    } else {
+                        alert('お使いのブラウザは共有機能に対応していません。');
+                    }
+                },
+
+                addToHistory(blob) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const dataUrl = reader.result;
+                        const fileNameParts = this.fileName.split('.');
+                        fileNameParts.pop();
+                        const baseName = fileNameParts.join('.');
+                        const item = {
+                            dataUrl,
+                            fileName: `${baseName}_resized.${this.originalFormat}`,
+                            format: this.originalFormat
+                        };
+                        this.history.unshift(item);
+                        if (this.history.length > 10) {
+                            this.history.pop();
+                        }
+                        localStorage.setItem('resizeHistory', JSON.stringify(this.history));
+                    };
+                    reader.readAsDataURL(blob);
+                },
+
+                downloadHistoryImage(index) {
+                    const item = this.history[index];
+                    const link = document.createElement('a');
+                    link.download = item.fileName;
+                    link.href = item.dataUrl;
+                    link.click();
+                },
+
+                shareHistoryImage(index) {
+                    const item = this.history[index];
+                    if (navigator.share) {
+                        fetch(item.dataUrl)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                const file = new File([blob], item.fileName, { type: `image/${item.format}` });
                                 navigator.share({
                                     files: [file],
                                     title: 'Resized Image',

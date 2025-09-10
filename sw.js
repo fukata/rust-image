@@ -5,7 +5,7 @@ const urlsToCache = [
   './logo.png',
   './pkg/rust_image.js',
   './pkg/rust_image_bg.wasm',
-  'https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js'
+  './alpine.js'
 ];
 
 // インストール時のキャッシュ

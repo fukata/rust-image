@@ -5,7 +5,8 @@ const urlsToCache = [
   './logo.png',
   './pkg/rust_image.js',
   './pkg/rust_image_bg.wasm',
-  './alpine.js'
+  './alpine.js',
+  './offline.html'
 ];
 
 // インストール時のキャッシュ
@@ -63,7 +64,7 @@ self.addEventListener('fetch', event => {
           });
 
           return response;
-        });
+        }).catch(() => caches.match('./offline.html'));
       })
   );
-}); 
+});

@@ -44,12 +44,15 @@ jobs:
     - name: Build wasm package
       run: wasm-pack build --target web
 
-    - name: Copy pkg directory and index.html to dist
+    - name: Copy static files to dist
       run: |
         mkdir -p dist/pkg
         cp -r pkg/* dist/pkg
         cp logo.png dist/logo.png
         cp index.html dist/index.html
+        cp sw.js dist/sw.js
+        cp alpine.js dist/alpine.js
+        cp offline.html dist/offline.html
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3

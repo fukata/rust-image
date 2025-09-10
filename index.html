@@ -689,11 +689,13 @@
                 },
 
                 deleteHistoryItem(index) {
-                    this.history.splice(index, 1);
-                    localStorage.setItem('resizeHistory', JSON.stringify(this.history));
-                    this.closeHistoryImage();
-                    if (!this.history.length) {
-                        this.showHistory = false;
+                    if (confirm('この履歴を削除しますか？')) {
+                        this.history.splice(index, 1);
+                        localStorage.setItem('resizeHistory', JSON.stringify(this.history));
+                        this.closeHistoryImage();
+                        if (!this.history.length) {
+                            this.showHistory = false;
+                        }
                     }
                 },
 

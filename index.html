@@ -224,6 +224,11 @@
             justify-content: center;
             gap: 0.5rem;
         }
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
         .thumbnail-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -388,8 +393,10 @@
             </div>
 
             <div x-show="showHistory" x-cloak id="history-section">
-                <h2>履歴</h2>
-                <button class="btn btn-danger" @click="clearHistory">履歴をクリア</button>
+                <div class="history-header">
+                    <h2>履歴</h2>
+                    <button class="btn btn-danger" @click="clearHistory">履歴をクリア</button>
+                </div>
                 <div class="thumbnail-grid">
                     <template x-for="(item, index) in history" :key="index">
                         <img class="thumbnail" :src="item.dataUrl" alt="History Image" @click="openHistoryImage(index)">

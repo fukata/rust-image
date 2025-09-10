@@ -104,6 +104,12 @@
         .btn:active {
             transform: translateY(0);
         }
+        .btn-danger {
+            background-color: #ef4444;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
         .file-field {
             margin-bottom: 1rem;
             border: 2px dashed #d1d5db;
@@ -382,7 +388,7 @@
 
             <div x-show="showHistory" x-cloak id="history-section">
                 <h2>履歴</h2>
-                <button class="btn" @click="clearHistory">履歴をクリア</button>
+                <button class="btn btn-danger" @click="clearHistory">履歴をクリア</button>
                 <div class="thumbnail-grid">
                     <template x-for="(item, index) in history" :key="index">
                         <img class="thumbnail" :src="item.dataUrl" alt="History Image" @click="openHistoryImage(index)">
@@ -396,6 +402,7 @@
                     <div class="actions">
                         <button class="btn" @click="downloadHistoryImage(selectedHistoryIndex)">ダウンロード</button>
                         <button class="btn" @click="shareHistoryImage(selectedHistoryIndex)">共有</button>
+                        <button class="btn btn-danger" @click="deleteHistoryItem(selectedHistoryIndex)">削除</button>
                         <button class="btn" @click="closeHistoryImage">閉じる</button>
                     </div>
                 </div>
@@ -672,11 +679,22 @@
                     }
                 },
 
+                deleteHistoryItem(index) {
+                    this.history.splice(index, 1);
+                    localStorage.setItem('resizeHistory', JSON.stringify(this.history));
+                    this.closeHistoryImage();
+                    if (!this.history.length) {
+                        this.showHistory = false;
+                    }
+                },
+
                 clearHistory() {
-                    this.history = [];
-                    localStorage.removeItem('resizeHistory');
-                    this.showHistory = false;
-                    this.selectedHistoryIndex = null;
+                    if (confirm('履歴を全て削除しますか？')) {
+                        this.history = [];
+                        localStorage.removeItem('resizeHistory');
+                        this.showHistory = false;
+                        this.selectedHistoryIndex = null;
+                    }
                 }
             }))
         });

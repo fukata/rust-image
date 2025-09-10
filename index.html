@@ -338,8 +338,13 @@
                 </div>
             </div>
 
-            <div x-show="history.length" x-cloak id="history-section">
+            <div x-show="history.length && !showHistory">
+                <button class="btn" @click="showHistory = true">履歴を表示</button>
+            </div>
+
+            <div x-show="showHistory" x-cloak id="history-section">
                 <h2>履歴</h2>
+                <button class="btn" @click="clearHistory">履歴をクリア</button>
                 <template x-for="(item, index) in history" :key="index">
                     <div class="image-container">
                         <img :src="item.dataUrl" alt="History Image">
@@ -386,6 +391,7 @@
                 isResizing: false,
                 showOriginal: false,
                 showResized: false,
+                showHistory: false,
                 originalImageData: null,
                 originalFormat: '',
                 originalImage: null,
@@ -610,6 +616,12 @@
                     } else {
                         alert('お使いのブラウザは共有機能に対応していません。');
                     }
+                },
+
+                clearHistory() {
+                    this.history = [];
+                    localStorage.removeItem('resizeHistory');
+                    this.showHistory = false;
                 }
             }))
         });

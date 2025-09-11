@@ -2,12 +2,12 @@
   "name": "Image Resizer",
   "short_name": "ImageResizer",
   "description": "画像をリサイズして最適化するWebアプリ",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#3b82f6",
   "background_color": "#f3f4f6",
-  "scope": "/",
+  "scope": "./",
   "lang": "ja",
   "categories": ["photo", "productivity", "utilities"],
   "icons": [
@@ -35,7 +35,7 @@
       "name": "画像をリサイズ",
       "short_name": "リサイズ",
       "description": "新しい画像をリサイズします",
-      "url": "/?action=resize",
+      "url": "./?action=resize",
       "icons": [
         {
           "src": "./logo.png",

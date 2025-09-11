@@ -1,8 +1,11 @@
-const CACHE_NAME = 'image-resizer-cache-v1';
+const CACHE_NAME = 'image-resizer-cache-v2';
 const urlsToCache = [
   './',
   './index.html',
+  './manifest.json',
   './logo.png',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png',
   './pkg/rust_image.js',
   './pkg/rust_image_bg.wasm',
   './alpine.js',

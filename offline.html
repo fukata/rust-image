@@ -2,10 +2,72 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>オフライン</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#3b82f6">
+  <title>オフライン - Image Resizer</title>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      background-color: #f3f4f6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1rem;
+    }
+    .container {
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      color: #1f2937;
+      margin: 0 0 1rem 0;
+      font-size: 1.5rem;
+    }
+    p {
+      color: #6b7280;
+      margin: 0 0 1.5rem 0;
+      line-height: 1.5;
+    }
+    .retry-btn {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .retry-btn:hover {
+      background-color: #2563eb;
+    }
+  </style>
 </head>
 <body>
-  <h1>オフラインです</h1>
-  <p>インターネット接続を確認してください。</p>
+  <div class="container">
+    <div class="icon">📱</div>
+    <h1>オフラインです</h1>
+    <p>インターネット接続を確認してから、もう一度お試しください。</p>
+    <button class="retry-btn" onclick="window.location.reload()">再試行</button>
+  </div>
+  
+  <script>
+    // オンラインになったら自動的にリロード
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  </script>
 </body>
 </html>

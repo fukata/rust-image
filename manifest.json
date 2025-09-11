@@ -1,0 +1,56 @@
+{
+  "name": "Image Resizer",
+  "short_name": "ImageResizer",
+  "description": "画像をリサイズして最適化するWebアプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#3b82f6",
+  "background_color": "#f3f4f6",
+  "scope": "/",
+  "lang": "ja",
+  "categories": ["photo", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "206x206",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "画像をリサイズ",
+      "short_name": "リサイズ",
+      "description": "新しい画像をリサイズします",
+      "url": "/?action=resize",
+      "icons": [
+        {
+          "src": "./logo.png",
+          "sizes": "206x206"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./current-screenshot.png",
+      "sizes": "800x600",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Image Resizer メイン画面"
+    }
+  ]
+}
